@@ -23,7 +23,7 @@ void ofxQtVideoSaver::setCodecQualityLevel(int level) {
 	if (level <=  OF_QT_SAVER_CODEC_QUALITY_LOSSLESS && level >= 0){
 		codecQualityLevel = level;
 	} else {
-		printf("please see the defines in ofQtSaver.h \n");
+		ofLogError("ofQTVideoSaver")  <<"please see the defines in ofQtSaver.h ";
 	}
 }
 
@@ -67,7 +67,7 @@ void ofxQtVideoSaver::setup( int width , int height, string movieName){
 
     if (osErr && (osErr != fnfErr))    /* File-not-found error is ok         */
       { 
-      printf ("getting FSS spec failed %d\n", osErr); 
+      ofLogError("ofQTVideoSaver")  <<"getting FSS spec failed " << osErr; 
       goto bail; 
      }
 	 
@@ -89,7 +89,7 @@ void ofxQtVideoSaver::setup( int width , int height, string movieName){
       );
     if (osErr) 
       { 
-      printf ("CreateMovieFile failed %d\n", osErr); 
+      ofLogError("ofQTVideoSaver")  <<"CreateMovieFile failed " << osErr; 
       goto bail; 
       }
 
@@ -102,12 +102,12 @@ void ofxQtVideoSaver::setup( int width , int height, string movieName){
       movie,                           /* the movie to add track to          */
       ((long) w << 16),              /* width of track in pixels (Fixed)   */
       FixRatio (h, 1),               /* height of track in pixels (Fixed)  */ 
-      kNoVolume                        /* default volume level               */
+	  kFullVolume// kNoVolume                        /* default volume level               */
       );
     osErr = GetMoviesError ();
     if (osErr) 
       { 
-      printf ("NewMovieTrack failed %d\n", osErr); 
+      ofLogError("ofQTVideoSaver")  <<"NewMovieTrack failed " << osErr; 
       goto bail; 
       }
     
@@ -126,7 +126,7 @@ void ofxQtVideoSaver::setup( int width , int height, string movieName){
     osErr = GetMoviesError ();
     if (osErr) 
       { 
-      printf ("NewTrackMedia failed %d\n", osErr); 
+      ofLogError("ofQTVideoSaver")  <<"NewTrackMedia failed " << osErr; 
       goto bail; 
       }
 
@@ -163,7 +163,7 @@ void ofxQtVideoSaver::setup( int width , int height, string movieName){
       );
     if (osErr != noErr) 
       { 
-      printf ("NewGWorld 1 failed %d\n", osErr); 
+      ofLogError("ofQTVideoSaver")  <<"NewGWorld 1 failed " << osErr; 
       goto bail; 
       }
 
@@ -176,7 +176,7 @@ void ofxQtVideoSaver::setup( int width , int height, string movieName){
     pixMapHandle = GetGWorldPixMap (pMovieGWorld);
     if (pixMapHandle == NULL) 
       { 
-      printf ("GetGWorldPixMap failed\n"); 
+      ofLogError("ofQTVideoSaver")  <<"GetGWorldPixMap failed"; 
       goto bail; 
       }
     LockPixels (pixMapHandle);
@@ -199,7 +199,7 @@ void ofxQtVideoSaver::setup( int width , int height, string movieName){
       );
     if (osErr != noErr) 
       { 
-      printf ("GetMaxCompressionSize failed %d\n", osErr); 
+      ofLogError("ofQTVideoSaver")  <<"GetMaxCompressionSize failed" << osErr; 
       goto bail; 
       }
 
@@ -210,7 +210,7 @@ void ofxQtVideoSaver::setup( int width , int height, string movieName){
     hCompressedData = NewHandle (lMaxCompressionSize);
     if (hCompressedData == NULL) 
       { 
-      printf ("NewHandle(%ld) failed\n", lMaxCompressionSize); 
+      ofLogError("ofQTVideoSaver")  <<"NewHandle(%ld) failed" << lMaxCompressionSize; 
       goto bail; 
       }
 
@@ -230,7 +230,7 @@ void ofxQtVideoSaver::setup( int width , int height, string movieName){
     hImageDescription = (ImageDescriptionHandle) NewHandle (4);
     if (hImageDescription == NULL) 
       { 
-      printf ("NewHandle(4) failed\n"); 
+      ofLogError("ofQTVideoSaver")  << "NewHandle(4) failed"; 
       goto bail; 
       }
 	
@@ -243,7 +243,7 @@ void ofxQtVideoSaver::setup( int width , int height, string movieName){
     
     
   bail:    
-	printf("got to bail somehows \n");
+	ofLogError("ofQTVideoSaver")  << "got to bail somehows";
     if (sResRefNum != 0) CloseMovieFile (sResRefNum);
     if (movie     != NULL) DisposeMovie (movie);
 
@@ -253,45 +253,62 @@ void ofxQtVideoSaver::setup( int width , int height, string movieName){
 }
 
 void ofxQtVideoSaver::addAudioTrack(string audioPath)
-{
+{	
+	OSErr err;
+	Handle dataRef = NULL;
+	FSSpec    fileSpec;
+	short audioMovieRefNum = 0;
+	short audioMovieResId = 0;
+	Movie audioMovie = NULL;
+	Track audioCopyTrack = NULL;
+	Media audioCopyMedia = NULL;
+	Track destTrack = NULL;
+	Media destMedia = NULL;
 	
+	destTrack = NewMovieTrack (movie, 0, 0, kFullVolume);
+	destMedia = NewTrackMedia (destTrack, SoundMediaType,
+							   30. * 100, /* Video Time Scale */
+							   nil, 0);
 	
-	//OSErr err;
-//	Handle dataRef = NULL;
-//	FSSpec    fileSpec;
-//	short audioMovieRefNum = 0;
-//	short audioMovieResId = 0;
-//	Movie audioMovie = NULL;
-//	Track audioCopyTrack = NULL;
-//	Media audioCopyMedia = NULL;
-//	Track destTrack = NULL;
-//	Media destMedia = NULL;
-//	
-//	destTrack = NewMovieTrack (movie, 0, 0, kFullVolume);
-//	destMedia = NewTrackMedia (destTrack, SoundMediaType,
-//							   30. * 100, /* Video Time Scale */
-//							   nil, 0);
-//	
-//	err = BeginMediaEdits (destMedia);
-//	
-//	char * p = new char[audioPath.length()+1];
-//    strcpy(p, audioPath.c_str());
-//    NativePathNameToFSSpec(p, &fileSpec, 0L);
-//	
-//	err = OpenMovieFile(&fileSpec, &audioMovieRefNum, fsRdPerm);
-//	err = NewMovieFromFile(&audioMovie, audioMovieRefNum, &audioMovieResId, NULL, newMovieActive, NULL);
-//	err = CloseMovieFile(audioMovieRefNum);
-//	
-//	SetMovieTimeScale(audioMovie, 30.*100);
-//	
-//	audioCopyTrack = GetMovieTrack(audioMovie, 1);
-//	audioCopyMedia = GetTrackMedia(audioCopyTrack);
-//	
-//	long duration = GetMovieDuration(audioMovie);
-//	
-//	err = AddEmptyTrackToMovie (audioCopyTrack, movie, nil, nil, &destTrack);
-//	err = InsertTrackSegment(audioCopyTrack, destTrack, 0, duration, 0);
-//	err = EndMediaEdits(destMedia);
+	err = BeginMediaEdits (destMedia);
+	if (err != noErr)
+		ofLogError("QTAudio") << "Error beginning media edit";
+	
+	//make a buffer and fill it with the path name
+	char * p = new char[audioPath.length()+1];
+    strcpy(p, audioPath.c_str());
+	//convert path to quicktime path
+    NativePathNameToFSSpec(p, &fileSpec, 0L);
+	
+	//open file
+	err = OpenMovieFile(&fileSpec, &audioMovieRefNum, fsRdPerm);
+	if (err != noErr)
+		ofLogError("QTAudio") << "Error opening movie file";
+	
+	//make a movie with the track information
+	err = NewMovieFromFile(&audioMovie, audioMovieRefNum, &audioMovieResId, NULL, newMovieActive, NULL);
+	if (err != noErr)
+		ofLogError("QTAudio") << "Error making new movie";
+	err = CloseMovieFile(audioMovieRefNum);
+	if (err != noErr)
+		ofLogError("QTAudio") << "Error closing movie";
+	
+	SetMovieTimeScale(audioMovie, 30.*100);
+	
+	audioCopyTrack = GetMovieTrack(audioMovie, 1);
+	audioCopyMedia = GetTrackMedia(audioCopyTrack);
+	
+	long duration = GetMovieDuration(audioMovie);
+	
+	err = AddEmptyTrackToMovie (audioCopyTrack, movie, nil, nil, &destTrack);
+	if (err != noErr)
+		ofLogError("QTAudio") << "Error adding empty track";
+	err = InsertTrackSegment(audioCopyTrack, destTrack, 0, duration, 0);
+	if (err != noErr)
+		ofLogError("QTAudio") << "Error inserting track";
+	err = EndMediaEdits(destMedia);
+	if (err != noErr)
+		ofLogError("QTAudio") << "Error ending edits";
 }
 
 
@@ -314,7 +331,7 @@ void ofxQtVideoSaver::listCodecs(){
 
 	for (int i = 0; i < numCodecs; i++ ){
 		p2cstrcpy( typeName, codecNameSpecPtr->typeName );
-		printf("codec (%i) = %s \n", i, typeName);
+		ofLogError("ofQTVideoSaver")  << "codec" <<  i << ", " << typeName;
 		codecNameSpecPtr++;
 	}
 	DisposeCodecNameList( list );
@@ -339,7 +356,7 @@ void ofxQtVideoSaver::setCodecType( int chosenCodec ){
 	for (int i = 0; i < numCodecs; i++ ){
 		if (i == chosenCodec){
 			p2cstrcpy( typeName, codecNameSpecPtr->typeName );
-			printf("trying to set codec type to (%s) \n", typeName);
+			ofLogError("ofQTVideoSaver")  <<"trying to set codec type to " << typeName;
 			codecType = codecNameSpecPtr->cType;
 		}
 		codecNameSpecPtr++;
@@ -355,15 +372,19 @@ void ofxQtVideoSaver::finishMovie(){
 	bSetupForRecordingMovie = false;
 	
     
-    EndMediaEdits (media);             /* Inform the Movie Toolbox that they */
+	osErr = EndMediaEdits(media);             /* Inform the Movie Toolbox that they */
                                        /*   can close the media container.   */
-
+	if (osErr)
+	{
+		ofLogError("ofQTVideoSaver") << "Ending Media Resource failed " << osErr;
+		goto bail;
+	}
 
 	/*  Step 5:  Insert a reference into the track that specifies which of the
     media samples to play and when to start playing them. 
     ======================================================================  */
     
-    InsertMediaIntoTrack 
+	osErr = InsertMediaIntoTrack
       (
       track,                           /* the track to update.               */
       0,                               /* time in track where the specified  */
@@ -376,7 +397,11 @@ void ofxQtVideoSaver::finishMovie(){
                                        /*   using media time scale.          */
       1L<<16 //fixed1                  /* rate at which to play the samples. */
       );
-
+	if (osErr)
+	{
+		ofLogError("ofQTVideoSaver")  <<"Inserting Media Resource failed " << osErr;
+		goto bail;
+	}
 
 /*  Step 6:  Append the movie atom to the movie file (AddMovieResource).
     ====================================================================  */
@@ -391,7 +416,7 @@ void ofxQtVideoSaver::finishMovie(){
       );
     if (osErr) 
       { 
-      printf ("AddMovieResource failed %d\n", osErr); 
+      ofLogError("ofQTVideoSaver")  <<"AddMovieResource failed " << osErr; 
       goto bail; 
       }
 
@@ -494,7 +519,7 @@ void ofxQtVideoSaver::addFrame(unsigned char* data, float frameLengthInSecs){
         );
       if (osErr != noErr) 
         { 
-        printf ("CompressImage failed %d\n", osErr); 
+        ofLogError("ofQTVideoSaver")  <<"CompressImage failed " << osErr; 
         goto bail; 
         }
 
@@ -523,7 +548,7 @@ void ofxQtVideoSaver::addFrame(unsigned char* data, float frameLengthInSecs){
         );
       if (osErr != noErr) 
         { 
-        printf ("AddMediaSample failed %d\n", osErr); 
+        ofLogError("ofQTVideoSaver")  <<"AddMediaSample failed " << osErr; 
         //goto bail; 
         }
       
